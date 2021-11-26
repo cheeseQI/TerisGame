@@ -50,3 +50,30 @@ This may create a conflict of design files and/or lead to undesirable side
 effects.
 
 Is it OK to continue file generation?
+
+D:/Code_Play/VHDL/Finlas/cpu550-2016fasolution/VGA_Audio_PLL.v
+
+Nov 21 02PM:39:22>: Error in CNX file format.
+
+Error messages are listed in file
+D:/Code_Play/VHDL/Finlas/cpu550-2016fasolution/VGA_Audio_PLL.cnxerr.
+
+Can't create the custom megafunction variation file(s)
+
+D:/Code_Play/VHDL/Finlas/cpu550-2016fasolution/VGA_Audio_PLL.v
+
+Nov 21 02PM:39:35>: Error in CNX file format.
+
+Error messages are listed in file
+D:/Code_Play/VHDL/Finlas/cpu550-2016fasolution/VGA_Audio_PLL.cnxerr.
+
+Can't create the custom megafunction variation file(s)
+
+D:/Code_Play/VHDL/Finlas/cpu550-2016fasolution/VGA_Audio_PLL.v
+
+Nov 21 02PM:39:44>: Error in CNX file format.
+
+Error messages are listed in file
+D:/Code_Play/VHDL/Finlas/cpu550-2016fasolution/VGA_Audio_PLL.cnxerr.
+
+Can't create the custom megafunction variation file(s)
