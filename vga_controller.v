@@ -1,0 +1,897 @@
+module vga_controller(iRST_n,
+                      iVGA_CLK,
+                      oHS,
+                      oBLANK_n,
+                      oVS,
+                      b_data,
+                      g_data,
+                      r_data,
+							 vga_data,
+							 vga_addr,
+							 vga_wren,
+							 write_clk,
+							 block_wren,
+							 inscore,
+							 enscore);
+input iRST_n;
+input iVGA_CLK;
+input block_wren;
+input [7:0] vga_data;
+input [18:0] vga_addr;
+input write_clk;
+input vga_wren;
+input [31:0] inscore;
+input enscore;
+output reg oBLANK_n;
+output reg oHS;
+output reg oVS;
+output [7:0] b_data;
+output [7:0] g_data;  
+output [7:0] r_data;                        
+////////////////////
+reg [7:0] block_index;
+reg [202:0] block_data;                
+reg [18:0] ADDR;
+reg [23:0] bgr_data;
+wire [7:0] index;
+wire [23:0] bgr_data_raw;
+wire cBLANK_n,cHS,cVS,rst;
+wire qout;
+wire VGA_CLK_n;
+////
+assign rst = ~iRST_n;
+video_sync_generator LTM_ins (.vga_clk(iVGA_CLK),
+                              .reset(rst),
+                              .blank_n(cBLANK_n),
+                              .HS(cHS),
+                              .VS(cVS));
+////
+////Addresss generator
+always@(posedge iVGA_CLK,negedge iRST_n)
+begin
+  if (!iRST_n)
+     ADDR=19'd0;
+  else if (cHS==1'b0 && cVS==1'b0)
+     ADDR=19'd0;
+  else if (cBLANK_n==1'b1) begin
+     ADDR=ADDR+19'd1;
+  end
+end
+always@(posedge VGA_CLK_n) begin
+  block_data[block_index] = qout;
+  if (block_index == 8'd202)
+	  block_index = 8'd0;
+  else
+     block_index = block_index + 8'd1;
+end
+//////////////////////////
+blocks blocks_ram_inst (
+	.data (vga_data[0]),
+	.rdaddress (block_index),
+	.rdclock (VGA_CLK_n),
+	.wraddress (vga_addr[7:0]),
+	.wrclock (write_clk),
+	.wren (block_wren),
+	.q (qout)
+);
+//////INDEX addr.
+assign VGA_CLK_n = ~iVGA_CLK;
+img_ram img_ram_inst (
+	.data (vga_data),
+	.rdaddress (ADDR),
+	.rdclock (VGA_CLK_n),
+	.wraddress (vga_addr),
+	.wrclock (write_clk),
+	.wren (vga_wren),
+	.q (index)
+);
+
+scoreLatch scoreLatch_inst(
+	.d(inscore), 
+	.q(oscore),
+	.reset(iRST_n), 
+	.wren(enscore), 
+	.clk(write_clk)
+);
+//////Add switch-input logic here
+integer x, y;
+integer actualX, actualY, relativeX, relativeY;
+localparam upboader = 40;
+localparam downboader = 440;
+localparam leftboader = 400;
+localparam rightboader = 600;
+localparam scoreUp = 250;
+localparam scoreDown = 350;
+localparam scoreLeft = 100;
+localparam scoreRight = 300;
+reg [7:0] input_index;
+wire [20:0] score;
+wire [31:0] oscore;
+
+assign score = oscore[20:0];
+
+always@(negedge VGA_CLK_n) begin
+	actualX = ADDR % 19'd640;
+	actualY = ADDR / 19'd640;
+	if (actualX >= leftboader && actualX < rightboader 
+			&& actualY >= upboader && actualY < downboader) begin
+		relativeX = (actualX - leftboader) / 20 + 2;
+		relativeY = (actualY - upboader) / 20;
+		if (relativeX + relativeY*10 == 1 || relativeX + relativeY*10 == 11||
+		relativeX + relativeY*10 == 21 || relativeX + relativeY*10 == 31 ||
+		relativeX + relativeY*10 == 41 || relativeX + relativeY*10 == 51 ||
+		relativeX + relativeY*10 == 61 || relativeX + relativeY*10 == 71 ||
+		relativeX + relativeY*10 == 81 || relativeX + relativeY*10 == 91 ||
+		relativeX + relativeY*10 == 101 || relativeX + relativeY*10 == 111 ||
+		relativeX + relativeY*10 == 121 || relativeX + relativeY*10 == 131 ||
+		relativeX + relativeY*10 == 141 || relativeX + relativeY*10 == 151 ||
+		relativeX + relativeY*10 == 161 || relativeX + relativeY*10 == 171 ||
+		relativeX + relativeY*10 == 181 || relativeX + relativeY*10 == 191 ||
+		relativeX + relativeY*10 == 201 ||
+		relativeX + relativeY*10 == 2 || relativeX + relativeY*10 == 12 ||
+		relativeX + relativeY*10 == 22 || relativeX + relativeY*10 == 32 ||
+		relativeX + relativeY*10 == 42 || relativeX + relativeY*10 == 52 ||
+		relativeX + relativeY*10 == 62 || relativeX + relativeY*10 == 72 ||
+		relativeX + relativeY*10 == 82 || relativeX + relativeY*10 == 92 ||
+		relativeX + relativeY*10 == 102 || relativeX + relativeY*10 == 112 ||
+		relativeX + relativeY*10 == 122 || relativeX + relativeY*10 == 132 ||
+		relativeX + relativeY*10 == 142 || relativeX + relativeY*10 == 152 ||
+		relativeX + relativeY*10 == 162 || relativeX + relativeY*10 == 172 ||
+		relativeX + relativeY*10 == 182 || relativeX + relativeY*10 == 192 ||
+		relativeX + relativeY*10 == 193 ||
+		relativeX + relativeY*10 == 194 ||
+		relativeX + relativeY*10 == 195 ||
+		relativeX + relativeY*10 == 196 ||
+		relativeX + relativeY*10 == 197 ||
+		relativeX + relativeY*10 == 198 ||
+		relativeX + relativeY*10 == 199 ||
+		relativeX + relativeY*10 == 200) 
+		begin 
+		input_index = 2;
+		end
+		else input_index = block_data[relativeX + relativeY*10] ? 0 : 1;
+	end 
+	
+	else if (actualX >= scoreLeft && actualX < scoreRight && actualY >= scoreUp && actualY < scoreDown) 
+	begin
+			case ((score / 19'd1000) % 10) 
+			30'd0: begin
+				if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+					if(actualX >= 110 && actualX <= 140 && actualY >= 270 && actualY <= 280 ||
+						actualX >= 110 && actualX <= 140 && actualY >= 310 && actualY <= 320 ||
+						actualX >= 110 && actualX <= 120 && actualY >= 280 && actualY <= 310 || 
+						actualX >= 130 && actualX <= 140 && actualY >= 280 && actualY <= 310)
+					begin
+						input_index = 2;
+					end	
+					else
+					begin
+						input_index = 3;
+					end	
+				end	
+			end
+
+			30'd1: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 120 && actualX <= 130 && actualY >= 270 && actualY <= 320)
+				begin
+					input_index = 2;
+				end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end	
+			
+			30'd2: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 320)
+				begin	
+				if(actualX >= 110 && actualX <= 140 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 110 && actualX <= 120 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 310 && actualY <= 330)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd3: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 110 && actualX <= 140 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 310 && actualY <= 330)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end	
+				end	
+			end
+			
+			30'd4: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 110 && actualX <= 120 && actualY >= 270 && actualY <= 290 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 270 && actualY <= 290 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 300 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+					else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd5: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 110 && actualX <= 140 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 110 && actualX <= 120 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end	
+					else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd6: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 110 && actualX <= 140 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 110 && actualX <= 120 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 110 && actualX <= 140 && actualY >= 310 && actualY <= 320 ||
+					actualX >= 110 && actualX <= 120 && actualY >= 300 && actualY <= 310)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			30'd7: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 110 && actualX <= 140 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 270 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				end	
+			end
+			
+			30'd8: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 110 && actualX <= 140 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 270 && actualY <= 320 ||
+					actualX >= 110 && actualX <= 120 && actualY >= 280 && actualY <= 320 || 
+					actualX >= 120 && actualX <= 130 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 110 && actualX <= 130 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd9: begin
+			if(actualX >= 100 && actualX <= 150 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 110 && actualX <= 140 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 130 && actualX <= 140 && actualY >= 270 && actualY <= 320 ||
+					actualX >= 110 && actualX <= 120 && actualY >= 280 && actualY <= 300 || 
+					actualX >= 120 && actualX <= 130 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 110 && actualX <= 130 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			default: begin
+				input_index = 3;
+			end
+			endcase
+			
+			case ((score / 19'd100) % 10) 
+			30'd0: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+					if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 280 ||
+						actualX >= 160 && actualX <= 190 && actualY >= 310 && actualY <= 320 ||
+						actualX >= 160 && actualX <= 170 && actualY >= 280 && actualY <= 310 || 
+						actualX >= 180 && actualX <= 190 && actualY >= 280 && actualY <= 310)
+					begin
+						input_index = 2;
+					end
+					else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+
+			30'd1: begin
+			if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 320)
+				begin	
+				if(actualX >= 170 && actualX <= 180 && actualY >= 270 && actualY <= 320)
+				begin
+					input_index = 2;
+				end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end	
+			
+			30'd2: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 160 && actualX <= 190 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 160 && actualX <= 170 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 160 && actualX <= 190 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd3: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 160 && actualX <= 190 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 160 && actualX <= 190 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end	
+				end
+			end
+			
+			30'd4: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 160 && actualX <= 170 && actualY >= 270 && actualY <= 290 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 270 && actualY <= 290 ||
+					actualX >= 160 && actualX <= 170 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 300 && actualY <= 320)
+					begin
+						input_index = 2;
+					end	
+					else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd5: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 160 && actualX <= 170 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 160 && actualX <= 190 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 160 && actualX <= 190 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd6: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 160 && actualX <= 170 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 160 && actualX <= 190 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 160 && actualX <= 190 && actualY >= 310 && actualY <= 320 ||
+					actualX >= 160 && actualX <= 170 && actualY >= 300 && actualY <= 310)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			30'd7: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 270 && actualY <= 320)
+					begin
+						input_index = 2;
+					end	
+					else
+					begin
+						input_index = 3;
+					end
+				end
+			end
+			
+			30'd8: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 270 && actualY <= 320 ||
+					actualX >= 160 && actualX <= 170 && actualY >= 280 && actualY <= 320 || 
+					actualX >= 170 && actualX <= 180 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 160 && actualX <= 180 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd9: begin
+				if(actualX >= 150 && actualX <= 200 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 160 && actualX <= 190 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 180 && actualX <= 190 && actualY >= 270 && actualY <= 320 ||
+					actualX >= 160 && actualX <= 170 && actualY >= 280 && actualY <= 300 || 
+					actualX >= 170 && actualX <= 180 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 160 && actualX <= 180 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+					else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			default: begin
+				input_index = 3;
+			end
+			endcase
+			
+			case ((score / 19'd10) % 10) 
+			30'd0: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin	
+					if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 280 ||
+						actualX >= 210 && actualX <= 240 && actualY >= 310 && actualY <= 320 ||
+						actualX >= 210 && actualX <= 220 && actualY >= 280 && actualY <= 310 || 
+						actualX >= 230 && actualX <= 240 && actualY >= 280 && actualY <= 310)
+					begin
+						input_index = 2;
+					end
+					else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+
+			30'd1: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 220 && actualX <= 230 && actualY >= 270 && actualY <= 320)
+				begin
+					input_index = 2;
+				end
+				else
+					begin
+						input_index = 3;
+					end
+				end
+			end	
+			
+			30'd2: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin	
+				if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 210 && actualX <= 220 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end	
+					else
+					begin
+						input_index = 3;
+					end
+					end
+			end
+			
+			30'd3: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd4: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 210 && actualX <= 220 && actualY >= 270 && actualY <= 290 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 270 && actualY <= 290 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 300 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd5: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 210 && actualX <= 220 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd6: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 210 && actualX <= 220 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 210 && actualX <= 240 && actualY >= 310 && actualY <= 320 ||
+					actualX >= 210 && actualX <= 220 && actualY >= 300 && actualY <= 310)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			30'd7: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 270 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end	
+			end
+		end	
+			
+			30'd8: begin
+				if(actualX >= 200 && actualX <= 250 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 270 && actualY <= 320 ||
+					actualX >= 210 && actualX <= 220 && actualY >= 280 && actualY <= 320 || 
+					actualX >= 220 && actualX <= 230 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 210 && actualX <= 230 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+				begin
+					input_index = 3;
+				end	
+			end
+		end
+			
+			30'd9: begin
+			if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 320)
+				begin
+				if(actualX >= 210 && actualX <= 240 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 230 && actualX <= 240 && actualY >= 280 && actualY <= 320 ||
+					actualX >= 210 && actualX <= 220 && actualY >= 280 && actualY <= 300 || 
+					actualX >= 220 && actualX <= 230 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 210 && actualX <= 230 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			default: begin
+				input_index = 3;
+			end
+			endcase
+			
+			case ((score) % 10) 
+			30'd0: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin	
+					if(actualX >= 260 && actualX <= 290 && actualY >= 270 && actualY <= 280 ||
+						actualX >= 260 && actualX <= 290 && actualY >= 310 && actualY <= 320 ||
+						actualX >= 260 && actualX <= 270 && actualY >= 280 && actualY <= 310 || 
+						actualX >= 280 && actualX <= 290 && actualY >= 280 && actualY <= 310)
+					begin
+						input_index = 2;
+					end
+					else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+
+			30'd1: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 270 && actualX <= 280 && actualY >= 270 && actualY <= 320)
+				begin
+					input_index = 2;
+				end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end	
+			
+			30'd2: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 260 && actualX <= 290 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 260 && actualX <= 270 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd3: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 260 && actualX <= 290 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd4: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 260 && actualX <= 270 && actualY >= 270 && actualY <= 290 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 270 && actualY <= 290 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 300 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd5: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 260 && actualX <= 290 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 260 && actualX <= 270 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd6: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 260 && actualX <= 290 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 260 && actualX <= 270 && actualY >= 280 && actualY <= 290 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 300 && actualY <= 310 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 310 && actualY <= 320 ||
+					actualX >= 260 && actualX <= 270 && actualY >= 300 && actualY <= 310)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			30'd7: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 260 && actualX <= 290 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 270 && actualY <= 320)
+					begin
+						input_index = 2;
+					end	
+				end
+			end
+			
+			30'd8: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 260 && actualX <= 290 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 280 && actualY <= 320 ||
+					actualX >= 260 && actualX <= 270 && actualY >= 280 && actualY <= 320 || 
+					actualX >= 270 && actualX <= 280 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 260 && actualX <= 290 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			
+			30'd9: begin
+				if(actualX >= 250 && actualX <= 300 && actualY >= 260 && actualY <= 330)
+				begin
+				if(actualX >= 260 && actualX <= 290 && actualY >= 270 && actualY <= 280 ||
+					actualX >= 280 && actualX <= 290 && actualY >= 270 && actualY <= 320 ||
+					actualX >= 260 && actualX <= 270 && actualY >= 280 && actualY <= 300 || 
+					actualX >= 270 && actualX <= 280 && actualY >= 290 && actualY <= 300 ||
+					actualX >= 260 && actualX <= 280 && actualY >= 310 && actualY <= 320)
+					begin
+						input_index = 2;
+					end
+				else
+					begin
+						input_index = 3;
+					end
+				end	
+			end
+			default: begin
+				input_index = 3;
+			end
+			endcase
+	end
+	else
+	begin
+	input_index = 1;
+	end
+
+end//always	
+//////Color table output
+img_index	img_index_inst (
+	.address ( input_index ),
+	.clock ( iVGA_CLK ),
+	.q ( bgr_data_raw)
+	);	
+//////
+//////latch valid data at falling edge;
+always@(posedge VGA_CLK_n) 
+	bgr_data <= bgr_data_raw;
+assign b_data = bgr_data[23:16];
+assign g_data = bgr_data[15:8];
+assign r_data = bgr_data[7:0]; 
+///////////////////
+//////Delay the iHD, iVD,iDEN for one clock cycle;
+always@(negedge iVGA_CLK)
+begin
+  oHS<=cHS;
+  oVS<=cVS;
+  oBLANK_n<=cBLANK_n;
+end
+
+endmodule
+ 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

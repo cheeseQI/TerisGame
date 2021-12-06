@@ -68,6 +68,7 @@ beq $11 $21 right #################need other input#############################
 beq $11 $22 rotate
 beq $11 $23 down
 beq $11 $25 hardMode
+beq $11 $24 interrupt
 endmove: addi $10 $10 1 # counter++
 bgt $9 $10 movement # if N still > c loop again
 down: addi $15 $1 10
@@ -255,7 +256,11 @@ addi $1 $1 1 # move right
 sw $26 0($1)
 jal updateBlock 
 j endmove
-gameOver: j movementBegin
+gameOver: j gameOver
+interrupt: input $11 # get input always
+addi $24 $0 112
+beq $11 $24 interrupt
+j endmove
 checkClear: addi $15 $0 3 # constant 3 for stuck################################check whether should we clear##########
 sw $15 0($1)
 sw $15 0($2)
@@ -263,8 +268,8 @@ sw $15 0($3)
 sw $15 0($4)
 addi $16 $14 -20 # start of last line, as h
 checkClearWhile1: addi $15 $0 0 # count for stuck, init and set zero per loop
-addi $17 $0 0 # while1 loop counter j
-addi $25 $0 10 # while1 loop times
+addi $17 $0 0 # while2 loop counter j
+addi $25 $0 10 # while2 loop times
 checkClearWhile2: addi $17 $17 1 # while1 loop counter j++
 add $18 $16 $17 # block[h+j], 10-blocks while loop
 lw $19 0($18) # value of block[h+j]
@@ -282,17 +287,19 @@ bgt $26 $13 checkClearWhile1 #when N > h - 30
 j mainLoop # back to down function # no need to update
 clear: addi $12 $12 10 #score += 10
 output $12
+add $24 $0 $16 #temp register for store current h value!
+addi $26 $16 -30 #temp check h-30
 clearWhile: addi $28 $0 0 # while loop counter i, used to clear every line, move upper into lower
 addi $29 $0 10 # while loop width
-clearInnerWhile: add $30 $16 $28 # block[h+i]
+clearInnerWhile: add $30 $24 $28 # block[h+i]
 addi $7 $30 -10 # h+j -10
 lw $27 0($7) # value of block[h+i-10]
 sw $27 0($30) # value of h+j-10 => addr of h+i
 addi $28 $28 1 # i++
 bgt $29 $28 clearInnerWhile  # i < width
-addi $16 $16 -10 #h -= 10 
-bgt $16 $13 clearWhile 
-bgt $26 $13 checkClearWhile1 #when begin < h - 30
+addi $24 $24 -10 #h -= 10 
+bgt $24 $13 clearWhile 
+bgt $26 $13 checkClearWhile1 # when begin < h - 30
 j mainLoop
 rotate: sw $0 0($1)   # rotate type 0, 1, 2, 3 in $5 initial default as 0
 sw $0 0($2) 
