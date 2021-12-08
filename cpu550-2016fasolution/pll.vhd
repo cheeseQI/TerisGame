@@ -2,7 +2,7 @@
 -- GENERATION: STANDARD
 -- VERSION: WM1.0
 -- MODULE: altpll 
-
+ 
 -- ============================================================
 -- File Name: pll.vhd
 -- Megafunction Name(s):

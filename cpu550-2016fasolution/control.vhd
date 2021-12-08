@@ -18,7 +18,7 @@ ENTITY control IS
 			link	: OUT STD_LOGIC;	-- jump-and-link store PC to $r31
 			jump_reg	: OUT STD_LOGIC;	-- return PC from register
 			keyboard	: OUT STD_LOGIC;	-- input
-			lcd	: OUT STD_LOGIC);	-- output
+			score	: OUT STD_LOGIC);	-- output
 END control;
 
 ARCHITECTURE Behavior OF control IS
@@ -82,6 +82,6 @@ BEGIN
 					ELSE '0';
 	keyboard <= '1' WHEN op="01110"	-- input
 					ELSE '0';
-	lcd <= '1' WHEN op="01111"	-- output
+	score <= '1' WHEN op="01111"	-- output
 				ELSE '0';
 END Behavior;

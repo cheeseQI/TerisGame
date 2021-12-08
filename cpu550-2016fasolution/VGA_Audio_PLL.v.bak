@@ -73,7 +73,7 @@ module VGA_Audio_PLL (
 				.clk (sub_wire0),
 				.activeclock (),
 				.clkbad (),
-				.clkena ({6{1'b1}}), 
+				.clkena ({6{1'b1}}),
 				.clkloss (),
 				.clkswitch (1'b0),
 				.configupdate (1'b0),

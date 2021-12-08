@@ -62,8 +62,7 @@ BEGIN
 	GENERIC MAP (
 		clock_enable_input_a => "NORMAL",
 		clock_enable_output_a => "BYPASS",
-		--init_file => "test-fibonacci-imem.hex",
-		init_file => "test-give_me_n-imem.hex",
+		init_file => "test.mif",
 		intended_device_family => "Cyclone II",
 		lpm_hint => "ENABLE_RUNTIME_MOD=NO",
 		lpm_type => "altsyncram",
@@ -71,7 +70,7 @@ BEGIN
 		operation_mode => "ROM",
 		outdata_aclr_a => "NONE",
 		outdata_reg_a => "UNREGISTERED",
-		ram_block_type => "M4K",
+		ram_block_type => "M9K",
 		widthad_a => 12,
 		width_a => 32,
 		width_byteena_a => 1

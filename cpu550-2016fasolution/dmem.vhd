@@ -1,7 +1,7 @@
 -- megafunction wizard: %RAM: 1-PORT%
 -- GENERATION: STANDARD
 -- VERSION: WM1.0
--- MODULE: altsyncram 
+-- MODULE: altsyncram  
 
 -- ============================================================
 -- File Name: dmem.vhd
@@ -63,8 +63,7 @@ BEGIN
 	GENERIC MAP (
 		clock_enable_input_a => "BYPASS",
 		clock_enable_output_a => "BYPASS",
-		--init_file => "test-fibonacci-dmem.hex",
-		init_file => "test-give_me_n-dmem.hex",
+		init_file => "dmem.mif",
 		intended_device_family => "Cyclone II",
 		lpm_hint => "ENABLE_RUNTIME_MOD=NO",
 		lpm_type => "altsyncram",
@@ -73,7 +72,7 @@ BEGIN
 		outdata_aclr_a => "NONE",
 		outdata_reg_a => "UNREGISTERED",
 		power_up_uninitialized => "FALSE",
-		ram_block_type => "M4K",
+		ram_block_type => "M9K",
 		widthad_a => 12,
 		width_a => 32,
 		width_byteena_a => 1

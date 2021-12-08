@@ -1,4 +1,4 @@
-module	Reset_Delay(iCLK,oRESET);
+module	delay_latch(iCLK,oRESET);
 input		iCLK;
 output reg	oRESET;
 reg	[19:0]	Cont;
